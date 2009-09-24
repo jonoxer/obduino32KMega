@@ -67,15 +67,15 @@ To-Do:
 
 // Comment for normal build
 // Uncomment to enable GPS. NOTE: requires that MEGA be set as well
-//#define ENABLE_GPS
+#define ENABLE_GPS
 
 // Comment for normal build
 // Uncomment to enable VDIP1 flash storage module. NOTE: requires that MEGA be set as well
-//#define ENABLE_VDIP
+#define ENABLE_VDIP
 
 // Comment for normal build
 // Uncomment to enable power-fail detection
-//#define ENABLE_PWRFAILDETECT
+#define ENABLE_PWRFAILDETECT
 
 // Comment to use MC33290 ISO K line chip
 // Uncomment to use ELM327
@@ -88,7 +88,7 @@ To-Do:
 //#define useL_Line
 
 // Uncomment only one of the below init sequences if using ISO
-#define ISO_9141
+//#define ISO_9141
 //#define ISO_14230_fast
 //#define ISO_14230_slow
 
@@ -110,11 +110,6 @@ To-Do:
 #include <limits.h>
 #include <avr/eeprom.h>
 #include <avr/pgmspace.h>
-
-//#ifdef ENABLE_GPS
-//#include <TinyGPS.h>   // Use the TinyGPS library to parse GPS data
-//TinyGPS gps;
-//#endif
 
 // Define serial ports so they can be easily switched for the Mega vs Duemilanove, etc
 #ifdef MEGA
@@ -184,7 +179,7 @@ void printFloat( double f, int digits=2 );
 #define lbuttonPin 62 // Left Button, on analog 8
 #define mbuttonPin 63 // Middle Button, on analog 9
 #define rbuttonPin 64 // Right Button, on analog 10
-#define buttonGnd 65  // Pin to supply 0V
+//#define buttonGnd 65  // Pin to supply 0V
 #define lbuttonBit 1 //  pin62 is a bitmask 1 on port K
 #define mbuttonBit 2  // pin63 is a bitmask 2 on port K
 #define rbuttonBit 4  // pin64 is a bitmask 4 on port K
@@ -727,8 +722,7 @@ params_t params=
     { 0,0,0 }  // outing:dist, fuel, waste
   },
   {
-    //{ {LOAD_CONS,LOAD_VALUE,TANK_CONS,OUTING_FUEL
-    { {INT_AIR_TEMP,VEHICLE_SPEED,COOLANT_TEMP,ENGINE_RPM
+    { {FUEL_CONS,LOAD_VALUE,TANK_CONS,OUTING_FUEL
        #if LCD_ROWS == 4
          ,OUTING_WASTE,OUTING_COST,ENGINE_ON,LOAD_VALUE
        #endif
@@ -749,7 +743,7 @@ params_t params=
 prog_char * econ_Visual[] PROGMEM=
 {
   "Yuck!!8{",
-  "Aweful:(",
+  "Awful :(",
   "Poor  :[",
   "OK    :|",
   "Good  :]",
@@ -828,9 +822,8 @@ boolean ECUconnection;  // Have we connected to the ECU or not
 
 // the buttons interrupt
 // this is the interrupt handler for button presses
-ISR(PCINT16_vect)
+ISR(PCINT2_vect)
 {
-  HOST.println("Got here");
 #if 0
   static unsigned long last_millis = 0;
   unsigned long m = millis();
@@ -3021,8 +3014,8 @@ void setup()                    // run once, when the sketch starts
 #ifdef MEGA
   HOST.begin(38400);
   HOST.println("Starting up");
-  pinMode(buttonGnd, OUTPUT);
-  digitalWrite(buttonGnd, LOW);
+  //pinMode(buttonGnd, OUTPUT);
+  //digitalWrite(buttonGnd, LOW);
 #endif
 
 #ifdef ENABLE_VDIP
@@ -3076,7 +3069,7 @@ void setup()                    // run once, when the sketch starts
   engine_off = engine_on = millis();
 
   lcd_init();
-  lcd_print_P(PSTR("OBDuino32k  v158.1"));
+  lcd_print_P(PSTR("OBDuino32kM v158"));
 #ifndef ELM
   do // init loop
   {
@@ -3483,7 +3476,6 @@ void lcd_print_P(char *string)
 
   sprintf_P(str, string);
   lcd_print(str);
-  HOST.println(str);
 }
 
 void lcd_cls_print_P(char *string)
