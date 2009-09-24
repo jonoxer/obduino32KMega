@@ -117,6 +117,7 @@ To-Do:
 #define OBD2 Serial1
 #define GPS  Serial2
 #define VDIP Serial3
+byte logActive = 0;  // Flag used in logging state machine
 #else
 #define OBD2 Serial
 #endif
@@ -818,6 +819,12 @@ boolean ECUconnection;  // Have we connected to the ECU or not
 #define VDIP_STATUS_LED 11  // LED to show whether a file is open
 #define VDIP_WRITE_LED  10  // LED to show when write is in progress
 #define VDIP_RTS_PIN     9  // Check if the VDIP is ready to receive. Active low
+#define LOG_LED 4           // Pin connected to the "log" status LED (active high)
+#define LOG_BUTTON 3
+#define LOG_BUTTON_INT 1
+#define POWER_SENSE_PIN 2
+#define POWER_SENSE_INT 0
+volatile unsigned long logButtonTimestamp = 0;
 #endif
 
 // the buttons interrupt
@@ -3134,6 +3141,12 @@ void setup()                    // run once, when the sketch starts
 
 void loop()                     // run over and over again
 {
+  // Process any commands from the host
+  processHostCommands();
+  
+  // Echo data from the VDIP back to the host
+  processVdipBuffer();
+  
   #ifdef useECUState
     #ifdef DEBUG
       ECUconnection = true;
