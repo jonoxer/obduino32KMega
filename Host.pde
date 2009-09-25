@@ -84,3 +84,16 @@ void processHostCommands()
 }
 
 #endif
+
+void hostPrint( char* message )
+{
+  #ifdef MEGA
+  HOST.print(message);
+  #endif
+}
+void hostPrintLn( char* message )
+{
+  #ifdef MEGA
+  HOST.println(message);
+  #endif
+}

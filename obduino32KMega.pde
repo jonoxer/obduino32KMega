@@ -3020,9 +3020,13 @@ void setup()                    // run once, when the sketch starts
 {
 #ifdef MEGA
   HOST.begin(38400);
-  HOST.println("Starting up");
   //pinMode(buttonGnd, OUTPUT);
   //digitalWrite(buttonGnd, LOW);
+#endif
+
+  hostPrintLn("OBDuino32KMega v158 starting up");
+#ifdef DEBUG
+  hostPrintLn("*********** DEBUG MODE *************");
 #endif
 
 #ifdef ENABLE_VDIP
@@ -3030,17 +3034,19 @@ void setup()                    // run once, when the sketch starts
 #endif
 
 #ifndef ELM
+  hostPrint(" * Initialising non-ELM OBD     ");
   boolean success;
-
   // init pinouts
   pinMode(K_OUT, OUTPUT);
   pinMode(K_IN, INPUT);
   #ifdef useL_Line
   pinMode(L_OUT, OUTPUT);
   #endif
+  hostPrintLn("[OK]");
 #endif
 
   // buttons init
+  hostPrint(" * Initialising buttons         ");
   pinMode(lbuttonPin, INPUT);
   pinMode(mbuttonPin, INPUT);
   pinMode(rbuttonPin, INPUT);
@@ -3058,11 +3064,13 @@ void setup()                    // run once, when the sketch starts
   PCMSK1 |= (1 << PCINT11) | (1 << PCINT12) | (1 << PCINT13);
   PCICR  |= (1 << PCIE1);
   #endif
+  hostPrintLn("[OK]");
 
   // load parameters
   params_load();  // if something is wrong, default parms are used
 
   // LCD pin init
+  hostPrint(" * Initializing LCD             ");
   analogWrite(BrightnessPin,brightness[brightnessIdx]);
   analogWrite(ContrastPin, params.contrast);
   pinMode(EnablePin,OUTPUT);
@@ -3077,16 +3085,23 @@ void setup()                    // run once, when the sketch starts
 
   lcd_init();
   lcd_print_P(PSTR("OBDuino32kM v158"));
+  hostPrintLn("[OK]");
+
 #ifndef ELM
+  hostPrint(" * Non-ELM init                 ");
+  hostPrint(" * Non-ELM init ");
   do // init loop
   {
     lcd_gotoXY(2,1);
     #ifdef ISO_9141
       lcd_print_P(PSTR("ISO9141 Init"));
+      hostPrint("ISO9141 Init ");
     #elif defined ISO_14230_fast
       lcd_print_P(PSTR("ISO14230 Fast"));
+      hostPrint("ISO14230 Fast");
     #elif defined ISO_14230_slow
       lcd_print_P(PSTR("ISO14230 Slow"));
+      hostPrint("ISO14230 Slow");
     #endif
     
     
@@ -3111,19 +3126,28 @@ void setup()                    // run once, when the sketch starts
     delay(1000);
   }
   while(!success); // end init loop
+  hostPrintLn("   [OK]");
 #else
+  hostPrint(" * ELM init                     ");
   elm_init();
+  hostPrintLn("[OK]");
 #endif
 
 #ifdef carAlarmScreen
+  hostPrint(" * Car-alarm screen setup       ");
    refreshAlarmScreen = true;
+   hostPrintLn("[OK]");
 #endif      
 
   // check supported PIDs
+  hostPrint(" * Checking supported PIDs      ");
   check_supported_pids();
+  hostPrintLn("[OK]");
 
   // check if we have MIL code
+  hostPrint(" * Checking MIL code            ");
   check_mil_code();
+  hostPrintLn("[OK]");
 
   lcd_cls();
   old_time=millis();  // epoch
@@ -3131,8 +3155,11 @@ void setup()                    // run once, when the sketch starts
   
   #ifdef ENABLE_PWRFAILDETECT
   // Interrupt triggered by falling voltage on power supply input
+  hostPrint(" * Attaching powerfail ISR      ");
   attachInterrupt(0, powerFail, FALLING);
+  hostPrintLn("[OK]");
   #endif
+  hostPrintLn("******** Startup completed *********");
 }
 
 /*
@@ -3429,6 +3456,7 @@ void params_save(void)
 
 void params_load(void)
 {
+  hostPrint(" * Loading default parameters   ");
   params_t params_tmp;
   uint16_t crc, crc_calc;
   byte *p;
@@ -3447,6 +3475,8 @@ void params_load(void)
   // compare CRC
   if(crc==crc_calc)     // good, copy read params to params
     params=params_tmp;
+    
+  hostPrintLn("[OK]");
 }
 
 #ifdef DEBUG  // how can this takes 578 bytes!!

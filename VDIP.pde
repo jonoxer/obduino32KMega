@@ -2,11 +2,11 @@
 
 /**
  * initVdip
+ * Set up the Vinculum flash storage device
  */
 void initVdip()
 {
-  // Set up the Vinculum flash storage device
-  HOST.print(" * Initialising flash storage   ");
+  hostPrint(" * Initialising VDIP            ");
   pinMode(VDIP_STATUS_LED, OUTPUT);
   digitalWrite(VDIP_STATUS_LED, HIGH);
 
@@ -28,7 +28,7 @@ void initVdip()
 
   digitalWrite(VDIP_STATUS_LED, LOW);
   digitalWrite(VDIP_WRITE_LED, LOW);
-  HOST.println("[OK]");
+  hostPrintLn("[OK]");
 }
 
 
