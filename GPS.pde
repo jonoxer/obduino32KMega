@@ -1,6 +1,16 @@
 #ifdef ENABLE_GPS
 
 /**
+ * initGps
+ */
+void initGps()
+{
+  hostPrint(" * Initialising GPS             ");
+  GPS.begin(57600);
+  hostPrintLn("[OK]");
+}
+
+/**
  * gpsdump
  * Derived from the example code included in the TinyGPS library
  */

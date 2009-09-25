@@ -230,6 +230,12 @@ const byte LCD_PID_count = LCD_ROWS * 2;
 #ifdef ENABLE_GPS
 #include <TinyGPS.h>   
 TinyGPS gps;
+float gpsFLat, gpsFLon;
+unsigned long gpsAge, gpsDate, gpsTime, gpsChars;
+int gpsYear;
+byte gpsMonth, gpsDay, gpsHour, gpsMinute, gpsSecond, gpsHundredths;
+// Include the floatToString helper
+#include "floatToString.h"
 #endif
 
 /* PID stuff */
@@ -3033,6 +3039,10 @@ void setup()                    // run once, when the sketch starts
   initVdip();
 #endif
 
+#ifdef ENABLE_GPS
+  initGps();
+#endif
+
 #ifndef ELM
   hostPrint(" * Initialising non-ELM OBD     ");
   boolean success;
@@ -3173,6 +3183,19 @@ void loop()                     // run over and over again
   
   // Echo data from the VDIP back to the host
   processVdipBuffer();
+  
+  #ifdef ENABLE_GPS
+  feedgps();
+  gps.f_get_position( &gpsFLat, &gpsFLon, &gpsAge );
+  //gps.get_datetime( &gpsDate, &gpsTime, &gpsAge );
+  //gps.crack_datetime( &gpsYear, &gpsMonth, &gpsDay, &gpsHour, &gpsMinute, &gpsSecond, &gpsHundredths, &gpsAge );
+  char valBuffer[15];
+  floatToString(valBuffer, gpsFLat, 5);
+  HOST.print(valBuffer);
+  HOST.print(",");
+  floatToString(valBuffer, gpsFLon, 5);
+  HOST.println(valBuffer);
+  #endif
   
   #ifdef useECUState
     #ifdef DEBUG
