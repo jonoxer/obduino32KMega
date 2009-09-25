@@ -49,4 +49,18 @@ void processVdipBuffer()
   }
 }
 
+/**
+ * modeButton
+ * ISR attached to falling-edge interrupt 1 on digital pin 3
+ */
+void modeButton()
+{
+  if((millis() - logButtonTimestamp) > 300)  // debounce
+  {
+    logButtonTimestamp = millis();
+    //HOST.println(logButtonTimestamp);
+    digitalWrite(LOG_LED, !digitalRead(LOG_LED));
+  }
+}
+
 #endif
