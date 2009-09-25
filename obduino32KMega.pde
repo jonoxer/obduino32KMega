@@ -59,7 +59,7 @@ To-Do:
 
 // Comment for normal build
 // Uncomment for a debug build
-//#define DEBUG
+#define DEBUG
 
 // Comment to build for a Duemilanove or compatible (ATmega168, 328P, etc). Uncomment
 // to build for a Mega (ATmega1280)
@@ -237,6 +237,8 @@ byte gpsMonth, gpsDay, gpsHour, gpsMinute, gpsSecond, gpsHundredths;
 // Include the floatToString helper
 #include "floatToString.h"
 #endif
+//void gpsdump(TinyGPS &gps);
+//char valBuffer[15]; // Buffer for converting floats to strings before appending to vdipBuffer
 
 /* PID stuff */
 
@@ -830,6 +832,8 @@ boolean ECUconnection;  // Have we connected to the ECU or not
 #define LOG_BUTTON_INT 1
 #define POWER_SENSE_PIN 2
 #define POWER_SENSE_INT 0
+// We need the PString library to create a log buffer
+#include <PString.h>
 volatile unsigned long logButtonTimestamp = 0;
 #endif
 
@@ -3163,6 +3167,13 @@ void setup()                    // run once, when the sketch starts
   old_time=millis();  // epoch
   getpid_time=old_time;
   
+  #ifdef ENABLE_VDIP
+  hostPrint(" * Attaching logging ISR        ");
+  // Interrupt triggered by pressing "log on/off" button
+  attachInterrupt(1, modeButton, FALLING);
+  hostPrintLn("[OK]");
+  #endif
+  
   #ifdef ENABLE_PWRFAILDETECT
   // Interrupt triggered by falling voltage on power supply input
   hostPrint(" * Attaching powerfail ISR      ");
@@ -3184,17 +3195,51 @@ void loop()                     // run over and over again
   // Echo data from the VDIP back to the host
   processVdipBuffer();
   
+  #ifdef ENABLE_VDIP
+  char vdipBuffer[80];
+  PString logEntry( vdipBuffer, sizeof( vdipBuffer ) ); // Create a PString object called logEntry
+  #endif
+  
   #ifdef ENABLE_GPS
   feedgps();
-  gps.f_get_position( &gpsFLat, &gpsFLon, &gpsAge );
-  //gps.get_datetime( &gpsDate, &gpsTime, &gpsAge );
-  //gps.crack_datetime( &gpsYear, &gpsMonth, &gpsDay, &gpsHour, &gpsMinute, &gpsSecond, &gpsHundredths, &gpsAge );
-  char valBuffer[15];
-  floatToString(valBuffer, gpsFLat, 5);
-  HOST.print(valBuffer);
-  HOST.print(",");
-  floatToString(valBuffer, gpsFLon, 5);
-  HOST.println(valBuffer);
+  if( logActive == 1 )
+  {
+    gps.f_get_position( &gpsFLat, &gpsFLon, &gpsAge );
+    //gps.get_datetime( &gpsDate, &gpsTime, &gpsAge );
+    //gps.crack_datetime( &gpsYear, &gpsMonth, &gpsDay, &gpsHour, &gpsMinute, &gpsSecond, &gpsHundredths, &gpsAge );
+ 
+    char valBuffer[15];
+    floatToString(valBuffer, gpsFLat, 5);
+    HOST.print(valBuffer);
+    HOST.print(",");
+    
+    HOST.print((int)gpsFLat);
+    HOST.print(",");
+    
+    floatToString(valBuffer, gpsFLon, 5);
+    HOST.println(valBuffer);
+    
+    
+    // Latitude
+    floatToString(valBuffer, gpsFLat, 5);
+    logEntry += valBuffer;
+    logEntry += ",";
+
+    // Longitude
+    floatToString(valBuffer, gpsFLon, 5);
+    logEntry += valBuffer;
+    logEntry += ",";
+    
+    // Altitude (meters)
+    floatToString(valBuffer, gps.f_altitude(), 2);
+    logEntry += valBuffer;
+    logEntry += ",";
+    
+    // Speed (km/h)
+    floatToString(valBuffer, gps.f_speed_kmph(), 2);
+    logEntry += valBuffer;
+    logEntry += ",";
+  }
   #endif
   
   #ifdef useECUState
@@ -3359,6 +3404,36 @@ void loop()                     // run over and over again
 
   // test buttons
   test_buttons();
+  
+  #ifdef ENABLE_VDIP
+  /////////////////////// WRITE TO FLASH //////////////////////////////
+  if( logActive == 1 )
+  {
+    digitalWrite(VDIP_WRITE_LED, HIGH);
+    byte position = 0;
+    
+    HOST.print(logEntry.length());
+    HOST.print(": ");
+    HOST.println(logEntry);
+    
+    VDIP.print("WRF ");
+    VDIP.print(logEntry.length() + 1);  // 1 extra for the newline
+    VDIP.print(13, BYTE);
+    
+    while(position < logEntry.length())
+    {
+      if(digitalRead(VDIP_RTS_PIN) == LOW)
+      {
+        VDIP.print(vdipBuffer[position]);
+        position++;
+      } else {
+        HOST.println("BUFFER FULL");
+      }
+    }
+    VDIP.print(13, BYTE);               // End the log entry with a newline
+    digitalWrite(VDIP_WRITE_LED, LOW);
+  }
+  #endif
 }
 
 // Calculate the time difference, and account for roll over too
