@@ -218,9 +218,9 @@ byte brightnessIdx=2;
 // Note: Not currently tested on display larger than 16x2
 
 // How many rows of characters for the LCD (must be at least two)
-#define LCD_ROWS 2
+#define LCD_ROWS 4
 // How many characters across for the LCD (must be at least sixteen)
-const byte LCD_width = 16;
+const byte LCD_width = 20;
 // Calculate the middle point of the LCD display width
 const byte LCD_split = LCD_width / 2;
 //Calculate how many PIDs fit on a data screen (two per line)
@@ -3162,7 +3162,7 @@ void setup()                    // run once, when the sketch starts
 
   // check if we have MIL code
   hostPrint(" * Checking MIL code            ");
-  check_mil_code();
+  //check_mil_code();
   hostPrintLn("[OK]");
 
   lcd_cls();
@@ -3619,22 +3619,33 @@ int memoryTest(void)
 
 /*
  * LCD functions
+ * x=0..16, y=0..1  (for 16x2)
+ * x=0..20, y=0..3  (for 20x4)
  */
-// x=0..16, y=0..1
+/**
+ * lcd_gotoXY
+ */
 void lcd_gotoXY(byte x, byte y)
 {
-  byte dr=0x80+x;
-  if(y!=0)    // save 2 bytes compared to "if(y==1)"
-    dr+=0x40;
-  lcd_commandWrite(dr);
+  if ( y > LCD_ROWS )
+    y = LCD_ROWS - 1;    // Safety check for calls beyond the LCD
+
+  byte row_offsets[] = { 0x00, 0x40, 0x14, 0x54 };
+  lcd_commandWrite( 0x80 + x + row_offsets[y] );
 }
 
+/**
+ * lcd_print
+ */
 void lcd_print(char *string)
 {
   while(*string != 0)
     lcd_dataWrite(*string++);
 }
 
+/**
+ * lcd_print_P
+ */
 void lcd_print_P(char *string)
 {
   char str[STRLEN];
