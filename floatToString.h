@@ -1,3 +1,5 @@
+// There's already a "long to dec string" in the main obduino source
+
 // floatToString.h
 //
 // Tim Hirzel
