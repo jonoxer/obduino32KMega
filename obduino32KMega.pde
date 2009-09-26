@@ -59,7 +59,7 @@ To-Do:
 
 // Comment for normal build
 // Uncomment for a debug build
-#define DEBUG
+//#define DEBUG
 
 // Comment to build for a Duemilanove or compatible (ATmega168, 328P, etc). Uncomment
 // to build for a Mega (ATmega1280)
@@ -228,7 +228,7 @@ const byte LCD_PID_count = LCD_ROWS * 2;
 
 // Use the TinyGPS library to parse GPS data, but only if GPS is enabled
 #ifdef ENABLE_GPS
-#include <TinyGPS.h>   
+#include <TinyGPS.h>
 TinyGPS gps;
 float gpsFLat, gpsFLon;
 unsigned long gpsAge, gpsDate, gpsTime, gpsChars;
@@ -832,6 +832,8 @@ boolean ECUconnection;  // Have we connected to the ECU or not
 #define LOG_BUTTON_INT 1
 #define POWER_SENSE_PIN 2
 #define POWER_SENSE_INT 0
+unsigned long lastLogWrite = 0;  // Milliseconds since boot that the last entry was written
+#define LOG_INTERVAL   1000      // Milliseconds between log entries on the memory stick
 // We need the PString library to create a log buffer
 #include <PString.h>
 volatile unsigned long logButtonTimestamp = 0;
@@ -3198,6 +3200,7 @@ void loop()                     // run over and over again
   #ifdef ENABLE_VDIP
   char vdipBuffer[80];
   PString logEntry( vdipBuffer, sizeof( vdipBuffer ) ); // Create a PString object called logEntry
+  char valBuffer[15];  // Buffer for converting numbers to strings before appending to vdipBuffer
   #endif
   
   #ifdef ENABLE_GPS
@@ -3207,19 +3210,9 @@ void loop()                     // run over and over again
     gps.f_get_position( &gpsFLat, &gpsFLon, &gpsAge );
     //gps.get_datetime( &gpsDate, &gpsTime, &gpsAge );
     //gps.crack_datetime( &gpsYear, &gpsMonth, &gpsDay, &gpsHour, &gpsMinute, &gpsSecond, &gpsHundredths, &gpsAge );
- 
-    char valBuffer[15];
-    floatToString(valBuffer, gpsFLat, 5);
-    HOST.print(valBuffer);
-    HOST.print(",");
-    
-    HOST.print((int)gpsFLat);
-    HOST.print(",");
-    
-    floatToString(valBuffer, gpsFLon, 5);
-    HOST.println(valBuffer);
-    
-    
+
+    //char valBuffer[15];
+
     // Latitude
     floatToString(valBuffer, gpsFLat, 5);
     logEntry += valBuffer;
@@ -3229,19 +3222,19 @@ void loop()                     // run over and over again
     floatToString(valBuffer, gpsFLon, 5);
     logEntry += valBuffer;
     logEntry += ",";
-    
+
     // Altitude (meters)
-    floatToString(valBuffer, gps.f_altitude(), 2);
+    floatToString(valBuffer, gps.f_altitude(), 0);
     logEntry += valBuffer;
     logEntry += ",";
-    
+
     // Speed (km/h)
-    floatToString(valBuffer, gps.f_speed_kmph(), 2);
+    floatToString(valBuffer, gps.f_speed_kmph(), 0);
     logEntry += valBuffer;
     logEntry += ",";
   }
   #endif
-  
+
   #ifdef useECUState
     #ifdef DEBUG
       ECUconnection = true;
@@ -3404,34 +3397,65 @@ void loop()                     // run over and over again
 
   // test buttons
   test_buttons();
-  
+
   #ifdef ENABLE_VDIP
+  // Get PIDs we want to store on the memory stick
+
+  //char usbBuffer[15];
+
+  if (get_pid(COOLANT_TEMP, str, &tempLong)) {
+    logEntry += tempLong;
+    logEntry += ",";
+  }
+
+  //tempLong = 0;
+  if (get_pid(VEHICLE_SPEED, str, &tempLong)) {
+    logEntry += tempLong;
+    logEntry += ",";
+  }
+
+  //tempLong = 0;
+  if (get_pid(ENGINE_RPM, str, &tempLong)) {
+    logEntry += tempLong;
+    logEntry += ",";
+  }
+
+  if (get_pid(INT_AIR_TEMP, str, &tempLong)) {
+    logEntry += tempLong;
+    logEntry += ",";
+  }
+
   /////////////////////// WRITE TO FLASH //////////////////////////////
   if( logActive == 1 )
   {
-    digitalWrite(VDIP_WRITE_LED, HIGH);
-    byte position = 0;
-    
-    HOST.print(logEntry.length());
-    HOST.print(": ");
-    HOST.println(logEntry);
-    
-    VDIP.print("WRF ");
-    VDIP.print(logEntry.length() + 1);  // 1 extra for the newline
-    VDIP.print(13, BYTE);
-    
-    while(position < logEntry.length())
+    if(millis() - lastLogWrite > LOG_INTERVAL)
     {
-      if(digitalRead(VDIP_RTS_PIN) == LOW)
+      digitalWrite(VDIP_WRITE_LED, HIGH);
+      byte position = 0;
+
+      HOST.print(logEntry.length());
+      HOST.print(": ");
+      HOST.println(logEntry);
+
+      VDIP.print("WRF ");
+      VDIP.print(logEntry.length() + 1);  // 1 extra for the newline
+      VDIP.print(13, BYTE);
+
+      while(position < logEntry.length())
       {
-        VDIP.print(vdipBuffer[position]);
-        position++;
-      } else {
-        HOST.println("BUFFER FULL");
+        if(digitalRead(VDIP_RTS_PIN) == LOW)
+        {
+          VDIP.print(vdipBuffer[position]);
+          position++;
+        } else {
+          HOST.println("BUFFER FULL");
+        }
       }
+      VDIP.print(13, BYTE);               // End the log entry with a newline
+      digitalWrite(VDIP_WRITE_LED, LOW);
+
+      lastLogWrite = millis();
     }
-    VDIP.print(13, BYTE);               // End the log entry with a newline
-    digitalWrite(VDIP_WRITE_LED, LOW);
   }
   #endif
 }
@@ -3755,12 +3779,12 @@ void eco_visual(char *retbuf) {
   tfuel = params.trip[OUTING].fuel;
   tdist = params.trip[OUTING].dist;
   
-  if(tdist > 100 && tfuel!=0) {//Make sure no devisions by Zero.
+  if(tdist > 100 && tfuel!=0) {//Make sure no divisions by Zero.
     outing_cons = tfuel / (tdist / 1000);  //our current trip since engine start
     tfuel = params.trip[TANK].fuel;
     tdist = params.trip[TANK].dist;
     tank_cons = tfuel / (tdist / 1000);  //our results for the current tank of gas
-  } else {  //give some dummy numbers to avoid devide by zero numbers
+  } else {  //give some dummy numbers to avoid divide by zero numbers
     tank_cons = 100;
     outing_cons = 101;
   }
