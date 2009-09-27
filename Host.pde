@@ -1,5 +1,3 @@
-#ifdef MEGA
-
 /**
  * processHostCommands
  */
@@ -83,14 +81,19 @@ void processHostCommands()
   }
 }
 
-#endif
-
+/**
+ * hostPrint
+ */
 void hostPrint( char* message )
 {
   #ifdef MEGA
   HOST.print(message);
   #endif
 }
+
+/**
+ * hostPrintLn
+ */
 void hostPrintLn( char* message )
 {
   #ifdef MEGA
