@@ -59,7 +59,7 @@ To-Do:
 
 // Comment for normal build
 // Uncomment for a debug build
-//#define DEBUG
+#define DEBUG
 
 // Comment to build for a Duemilanove or compatible (ATmega168, 328P, etc). Uncomment
 // to build for a Mega (ATmega1280)
@@ -832,6 +832,25 @@ boolean ECUconnection;  // Have we connected to the ECU or not
 #define LOG_BUTTON_INT 1
 #define POWER_SENSE_PIN 2
 #define POWER_SENSE_INT 0
+byte logPid[] = {
+  LOAD_VALUE,
+  COOLANT_TEMP,
+  VEHICLE_SPEED,
+  ENGINE_RPM,
+  VEHICLE_SPEED,
+  TIMING_ADV,
+  INT_AIR_TEMP,
+  MAF_AIR_FLOW,
+  THROTTLE_POS,
+  FUEL_RAIL_P,
+  FUEL_LEVEL,
+  BARO_PRESSURE,
+  AMBIENT_TEMP,
+  FUEL_CONS,
+  BATT_VOLTAGE
+  };
+byte logPidCount = sizeof(logPid) / sizeof(logPid[0]);
+
 unsigned long lastLogWrite = 0;  // Milliseconds since boot that the last entry was written
 #define LOG_INTERVAL   1000      // Milliseconds between log entries on the memory stick
 // We need the PString library to create a log buffer
@@ -3185,20 +3204,21 @@ void setup()                    // run once, when the sketch starts
   hostPrintLn("******** Startup completed *********");
 }
 
-/*
+/**
  * Main loop
  */
-
-void loop()                     // run over and over again
+void loop()
 {
+  #ifdef MEGA
   // Process any commands from the host
   processHostCommands();
-  
-  // Echo data from the VDIP back to the host
-  processVdipBuffer();
+  #endif
   
   #ifdef ENABLE_VDIP
-  char vdipBuffer[80];
+  // Echo data from the VDIP back to the host
+  processVdipBuffer();
+
+  char vdipBuffer[160];
   PString logEntry( vdipBuffer, sizeof( vdipBuffer ) ); // Create a PString object called logEntry
   char valBuffer[15];  // Buffer for converting numbers to strings before appending to vdipBuffer
   #endif
@@ -3400,29 +3420,13 @@ void loop()                     // run over and over again
 
   #ifdef ENABLE_VDIP
   // Get PIDs we want to store on the memory stick
-
-  //char usbBuffer[15];
-
-  if (get_pid(COOLANT_TEMP, str, &tempLong)) {
-    logEntry += tempLong;
-    logEntry += ",";
-  }
-
-  //tempLong = 0;
-  if (get_pid(VEHICLE_SPEED, str, &tempLong)) {
-    logEntry += tempLong;
-    logEntry += ",";
-  }
-
-  //tempLong = 0;
-  if (get_pid(ENGINE_RPM, str, &tempLong)) {
-    logEntry += tempLong;
-    logEntry += ",";
-  }
-
-  if (get_pid(INT_AIR_TEMP, str, &tempLong)) {
-    logEntry += tempLong;
-    logEntry += ",";
+  if( logActive == 1 )
+  {
+    for(byte i=0; i < logPidCount; i++) {
+      if (get_pid( logPid[i], str, &tempLong))
+        logEntry += tempLong;
+      logEntry += ",";
+    }
   }
 
   /////////////////////// WRITE TO FLASH //////////////////////////////
@@ -3460,7 +3464,11 @@ void loop()                     // run over and over again
   #endif
 }
 
-// Calculate the time difference, and account for roll over too
+
+/**
+ * calcTimeDiff
+ * Calculate the time difference, and account for roll over too
+ */
 unsigned long calcTimeDiff(unsigned long start, unsigned long end)
 {
   if (start < end)
