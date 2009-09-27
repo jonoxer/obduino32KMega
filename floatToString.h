@@ -1,4 +1,4 @@
-// There's already a "long to dec string" in the main obduino source
+// There's already a "long_to_dec_st" in the main obduino source
 
 // floatToString.h
 //
@@ -80,7 +80,6 @@ char * floatToString(char * outstr, float value, int places, int minwidth=0, boo
     }
 
     // if no places after decimal, stop now and return
-
     // otherwise, write the point and continue on
     if (places > 0)
     outstr[c++] = '.';
@@ -99,7 +98,6 @@ char * floatToString(char * outstr, float value, int places, int minwidth=0, boo
             outstr[c++] = ' ';
         }
     }
-
 
     outstr[c++] = '\0';
     return outstr;

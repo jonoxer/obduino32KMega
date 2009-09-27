@@ -54,15 +54,16 @@ To-Do:
 
 
 // Compilation modifiers:
-// The following will cause the compiler to add or remove features from the OBDuino build this keeps the
-// build size down, will not allow 'on the fly' changes. Some features are dependent on other features.
+// The following will cause the compiler to add or remove features from the
+// OBDuino build this keeps the build size down, will not allow 'on the fly'
+// changes. Some features are dependent on other features.
 
 // Comment for normal build
 // Uncomment for a debug build
-#define DEBUG
+//#define DEBUG
 
-// Comment to build for a Duemilanove or compatible (ATmega168, 328P, etc). Uncomment
-// to build for a Mega (ATmega1280)
+// Comment to build for a Duemilanove or compatible (ATmega328P)
+// Uncomment to build for a Mega (ATmega1280)
 #define MEGA
 
 // Comment for normal build
@@ -74,7 +75,7 @@ To-Do:
 #define ENABLE_VDIP
 
 // Comment for normal build
-// Uncomment to enable power-fail detection
+// Uncomment to enable power-fail detection (currently only useful if VDIP is enabled)
 #define ENABLE_PWRFAILDETECT
 
 // Comment to use MC33290 ISO K line chip
@@ -146,8 +147,8 @@ byte logActive = 0;  // Flag used in logging state machine
 // LCD prototypes
 void lcd_gotoXY(byte x, byte y);
 void lcd_print(char *string);
-void lcd_print_P(char *string);  // to work with string in flash and PSTR()
-void lcd_cls_print_P(char *string);  // clear screen and display string
+void lcd_print_P(char *string);      // To work with string in flash and PSTR()
+void lcd_cls_print_P(char *string);  // Clear screen and display string
 void lcd_cls();
 void lcd_init();
 void lcd_tickleEnable();
@@ -215,8 +216,6 @@ byte brightnessIdx=2;
 
 /* LCD Display parameters */
 /* Adjust LCD_width or LCD_rows if LCD is different than 16 characters by 2 rows*/
-// Note: Not currently tested on display larger than 16x2
-
 // How many rows of characters for the LCD (must be at least two)
 #define LCD_ROWS 4
 // How many characters across for the LCD (must be at least sixteen)
@@ -237,8 +236,6 @@ byte gpsMonth, gpsDay, gpsHour, gpsMinute, gpsSecond, gpsHundredths;
 // Include the floatToString helper
 #include "floatToString.h"
 #endif
-//void gpsdump(TinyGPS &gps);
-//char valBuffer[15]; // Buffer for converting floats to strings before appending to vdipBuffer
 
 /* PID stuff */
 
@@ -327,7 +324,7 @@ unsigned long  pid41to60_support=0;
 
 #define LAST_PID      0x4E  // same as the last one defined above
 
-/* our internal fake PIDs */
+/* Our internal fake PIDs */
 
 #define FIRST_FAKE_PID 0xE9 // same as the first one defined below
 
@@ -767,7 +764,7 @@ prog_char * econ_Visual[] PROGMEM=
 #define NUL     '\0'
 #define CR      '\r'  // carriage return = 0x0d = 13
 #define PROMPT  '>'
-#define DATA    1  // data with no cr/prompt
+#define DATA    1     // data with no cr/prompt
 #else
 /*
  * for ISO9141-2 Protocol
@@ -1000,7 +997,6 @@ void elm_init()
 #else
 
 void serial_rx_on() {
-//  UCSR0B |= _BV(RXEN0);  //enable UART RX
   OBD2.begin(10400);		//setting enable bit didn't work, so do beginSerial
 }
 
@@ -1010,7 +1006,7 @@ void serial_rx_off() {
 
 void serial_tx_off() {
 
-   UCSR0B &= ~(_BV(TXEN0));  //disable UART TX
+   UCSR0B &= ~(_BV(TXEN0));   //disable UART TX
    delay(20);                 //allow time for buffers to flush
 }
 
@@ -3223,7 +3219,7 @@ void loop()
   #endif
   
   #ifdef ENABLE_GPS
-  feedgps();
+  processGpsBuffer();
   if( logActive == 1 )
   {
     gps.f_get_position( &gpsFLat, &gpsFLon, &gpsAge );
@@ -3293,10 +3289,10 @@ void loop()
         ISO_InitStep = 0;
       #endif
 
-      engine_off = millis();  //record the time the engine was shut off
+      engine_off = millis();  // Record the time the engine was shut off
       params_save();
       lcd_cls_print_P(PSTR("TRIPS SAVED!"));
-      //Lets Display how much fuel for the tank we wasted.
+      // Display how much fuel for the tank we wasted.
       char str[STRLEN] = {0};
       lcd_gotoXY(0,1);
       lcd_print_P(PSTR("Wasted:"));
@@ -3305,7 +3301,7 @@ void loop()
       lcd_print(str);
 
       delay(2000);
-      //Turn the Backlight off
+      // Turn the Backlight off
       analogWrite(BrightnessPin, brightness[0]);
 
       #ifdef carAlarmScreen

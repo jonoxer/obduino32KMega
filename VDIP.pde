@@ -1,8 +1,12 @@
 #ifdef ENABLE_VDIP
+/**
+ * Copyright 2009 Jonathan Oxer <jon@oxer.com.au>
+ * Distributed under the same terms as OBDuino
+ */
 
 /**
  * initVdip
- * Set up the Vinculum flash storage device
+ * Set up the Vinculum VDIP flash storage device
  */
 void initVdip()
 {
@@ -31,9 +35,9 @@ void initVdip()
   hostPrintLn("[OK]");
 }
 
-
 /**
  * processVdipBuffer
+ * Reads data sent by the VDIP module and passes it on to the host
  */
 void processVdipBuffer()
 {

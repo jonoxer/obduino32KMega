@@ -1,4 +1,8 @@
 #ifdef ENABLE_PWRFAILDETECT
+/**
+ * Copyright 2009 Jonathan Oxer <jon@oxer.com.au>
+ * Distributed under the same terms as OBDuino
+ */
 
 /**
  * powerFail
@@ -6,12 +10,10 @@
  */
 void powerFail()
 {
-  HOST.println();
-  HOST.println("     POWER FAIL!     ");
-  /* while(1 == 1)
-  {
-    HOST.println(".");
-  } */
+  VDIP.print("CLF ARDUINO.TXT");
+  VDIP.print(13, BYTE);
+  digitalWrite(LOG_LED, LOW);
+  logActive = 0;
 }
 
 #endif
