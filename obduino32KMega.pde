@@ -3627,11 +3627,10 @@ int memoryTest(void)
  */
 void lcd_gotoXY(byte x, byte y)
 {
-  if ( y > LCD_ROWS )
-    y = LCD_ROWS - 1;    // Safety check for calls beyond the LCD
-
-  byte row_offsets[] = { 0x00, 0x40, 0x14, 0x54 };
-  lcd_commandWrite( 0x80 + x + row_offsets[y] );
+  byte dr = 0x80 + x;
+  if (y&1) dr+= 0x40;
+  if (y&2) dr+= 0x14;
+  lcd_commandWrite( dr );
 }
 
 /**
