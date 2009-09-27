@@ -835,7 +835,6 @@ boolean ECUconnection;  // Have we connected to the ECU or not
 byte logPid[] = {
   LOAD_VALUE,
   COOLANT_TEMP,
-  VEHICLE_SPEED,
   ENGINE_RPM,
   VEHICLE_SPEED,
   TIMING_ADV,
