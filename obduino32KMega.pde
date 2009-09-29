@@ -130,7 +130,7 @@ byte logActive = 0;  // Flag used in logging state machine
 #define DB5Pin 57
 #define DB6Pin 58
 #define DB7Pin 59
-#define ContrastPin 60
+#define ContrastPin 6
 #define EnablePin 55
 #define BrightnessPin 5
 #else  // LCD Pins same as mpguino for a Duemilanove or equivalent
