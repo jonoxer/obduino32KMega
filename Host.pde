@@ -43,7 +43,7 @@ void processHostCommands()
       HOST.print("> ");
     } else if( readChar == '2') {           // Stop logging and close file
       HOST.println("Stop logging");
-      if(digitalRead(VDIP_RTS_PIN) == HIGH)
+      while(digitalRead(VDIP_RTS_PIN) == HIGH)
       {
         HOST.println("VDIP BUFFER FULL");
       }
@@ -57,6 +57,7 @@ void processHostCommands()
       HOST.println("Reading file");
       VDIP.print("RD OBDUINO.CSV");
       VDIP.print(13, BYTE);
+      processVdipBuffer();
       HOST.print("> ");
     } else if (readChar == '4'){            // Delete the file
       HOST.println("Deleting file");
