@@ -26,7 +26,7 @@ void initVdip()
   delay( 100 );
   digitalWrite(VDIP_RESET, HIGH);
   delay( 100 );
-  VDIP.begin(9600);      // Port for connection to Vinculum flash memory module
+  VDIP.begin(VDIP_BAUD_RATE);  // Port for connection to Vinculum flash memory module
   VDIP.print("IPA");     // Sets the VDIP to ASCII mode
   VDIP.print(13, BYTE);
 

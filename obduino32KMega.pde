@@ -115,12 +115,17 @@ To-Do:
 // Define serial ports so they can be easily switched for the Mega vs Duemilanove, etc
 #ifdef MEGA
 #define HOST Serial
+#define HOST_BAUD_RATE 38400
 #define OBD2 Serial1
+#define OBD2_BAUD_RATE 38400
 #define GPS  Serial2
+#define GPS_BAUD_RATE 57600
 #define VDIP Serial3
+#define VDIP_BAUD_RATE 9600
 byte logActive = 0;  // Flag used in logging state machine
 #else
 #define OBD2 Serial
+#define OBD2_BAUD_RATE 38400
 #endif
 
 // LCD pin assignments
@@ -882,8 +887,11 @@ ISR(PCINT2_vect)
 }
 
 #ifdef ELM
-/* each ELM response ends with '\r' followed at the end by the prompt
- so read com port until we find a prompt */
+/**
+ * elm_read
+ * each ELM response ends with '\r' followed at the end by the prompt
+ * so read com port until we find a prompt
+ */
 byte elm_read(char *str, byte size)
 {
   int b;
@@ -905,14 +913,20 @@ byte elm_read(char *str, byte size)
     return DATA;
 }
 
-// buf must be ASCIIZ
+/**
+ * elm_write
+ * buf must be ASCIIZ
+ */
 void elm_write(char *str)
 {
   while(*str!=NUL)
     OBD2.print(*str++);
 }
 
-// check header byte
+/**
+ * elm_check_response
+ * check header byte
+ */
 byte elm_check_response(const char *cmd, char *str)
 {
   // cmd is something like "010D"
@@ -926,6 +940,9 @@ byte elm_check_response(const char *cmd, char *str)
   return 0;  // no error
 }
 
+/**
+ * elm_compact_response
+ */
 byte elm_compact_response(byte *buf, char *str)
 {
   byte i=0;
@@ -941,8 +958,11 @@ byte elm_compact_response(byte *buf, char *str)
   return i;
 }
 
-// write simple string to ELM and return read result
-// cmd is a PSTR !!
+/**
+ * elm_command
+ * Write simple string to ELM and return read result
+ * cmd is a PSTR!!
+ */
 byte elm_command(char *str, char *cmd)
 {
   sprintf_P(str, cmd);
@@ -950,11 +970,14 @@ byte elm_command(char *str, char *cmd)
   return elm_read(str, STRLEN);
 }
 
+/**
+ * elm_init
+ */
 void elm_init()
 {
   char str[STRLEN];
 
-  OBD2.begin(38400);
+  OBD2.begin(OBD2_BAUD_RATE);
   OBD2.flush();
 
 #ifndef DEBUG
@@ -996,14 +1019,23 @@ void elm_init()
 }
 #else
 
+/**
+ * serial_rx_on
+ */
 void serial_rx_on() {
   OBD2.begin(10400);		//setting enable bit didn't work, so do beginSerial
 }
 
+/**
+ * serial_rx_off
+ */
 void serial_rx_off() {
   UCSR0B &= ~(_BV(RXEN0));  //disable UART RX
 }
 
+/**
+ * serial_tx_off
+ */
 void serial_tx_off() {
 
    UCSR0B &= ~(_BV(TXEN0));   //disable UART TX
@@ -1016,8 +1048,11 @@ void serial_tx_off() {
 #define READ_ATTEMPTS 125
 #endif
 
-// User must pass in a pointer to a byte to recieve the data.
-// Return value reflects success of the read attempt.
+/**
+ * iso_read_byte
+ * User must pass in a pointer to a byte to recieve the data.
+ * Return value reflects success of the read attempt.
+ */
 boolean iso_read_byte(byte * b)
 {
   int readData;
@@ -1039,6 +1074,9 @@ boolean iso_read_byte(byte * b)
   return success;
 }
 
+/**
+ * iso_write_byte
+ */
 void iso_write_byte(byte b)
 {
   serial_rx_off();
@@ -1047,7 +1085,10 @@ void iso_write_byte(byte b)
   serial_rx_on();
 }
 
-// inspired by SternOBDII\code\checksum.c
+/**
+ * iso_checksum
+ * inspired by SternOBDII\code\checksum.c
+ */
 byte iso_checksum(byte *data, byte len)
 {
   byte i;
@@ -1060,7 +1101,10 @@ byte iso_checksum(byte *data, byte len)
   return crc;
 }
 
-// inspired by SternOBDII\code\iso.c
+/**
+ * iso_write_data
+ * inspired by SternOBDII\code\iso.c
+ */
 byte iso_write_data(byte *data, byte len)
 {
   byte i, n;
@@ -1097,8 +1141,11 @@ byte iso_write_data(byte *data, byte len)
   return 0;
 }
 
-// read n byte(s) of data (+ header + cmd and crc)
-// return the count of bytes of message (includes all data in message)
+/**
+ * iso_read_data
+ * read n byte(s) of data (+ header + cmd and crc)
+ * return the count of bytes of message (includes all data in message)
+ */
 byte iso_read_data(byte *data, byte len)
 {
   byte i;
@@ -1130,10 +1177,14 @@ byte iso_read_data(byte *data, byte len)
   return dataSize;
 }
 
-/* ISO 9141 init */
-// The init process is done in timed sections now so that during the reinit process
-// the user can use the buttons, and the screen can be updated.
-// Note: Due to the timed nature of this init process, if the display screen takes up too much CPU time, this will not succeed
+/**
+ * iso_init
+ * ISO 9141 init
+ * The init process is done in timed sections now so that during the reinit
+ * process the user can use the buttons, and the screen can be updated.
+ * Note: Due to the timed nature of this init process, if the display screen
+ * takes up too much CPU time, this will not succeed
+ */
 void iso_init()
 {
   long currentTime = millis();
@@ -1466,10 +1517,12 @@ boolean is_pid_supported(byte pid, byte mode)
             (pid>LAST_PID && (pid<FIRST_FAKE_PID || mode==0)));
  }
 
-// Get value of a PID, and place in long pointer
-// and also formatted for string output in the return buffer
-// Return value denotes successful retrieval of PID.
-// User must pass in a long pointer to get the PID value.
+/**
+ * get_pid
+ * Get value of a PID, and place in long pointer and also formatted for
+ * string output in the return buffer. Return value denotes successful
+ * retrieval of PID. User must pass in a long pointer to get the PID value.
+ */
 boolean get_pid(byte pid, char *retbuf, long *ret)
 {
 #ifdef ELM
@@ -1536,8 +1589,8 @@ boolean get_pid(byte pid, char *retbuf, long *ret)
   }
 #endif
 
-  // a lot of formulas are the same so calculate a default return value here
-  // even if it's scrapped after, we still saved 40 bytes!
+  // A lot of formulas are the same so calculate a default return value here
+  // Even if it's scrapped later we still saved 40 bytes!
   *ret=buf[0]*256U+buf[1];
 
   // formula and unit for each PID
@@ -1555,7 +1608,7 @@ boolean get_pid(byte pid, char *retbuf, long *ret)
 #ifdef DEBUG
     *ret=2048;
 #endif
-    // ret is not divided by 100 for return value!!
+    // ret is not divided by 100 for return value!
     long_to_dec_str(*ret, decs, 2);
     sprintf_P(retbuf, PSTR("%s g/s"), decs);
     break;
@@ -1568,7 +1621,7 @@ boolean get_pid(byte pid, char *retbuf, long *ret)
     if(!params.use_metric)
       *ret=(*ret*1000U)/1609U;
     sprintf_P(retbuf, pctldpcts, *ret, params.use_metric?"\003\004":"\006\004");
-    // do not touch vss, it is used by fuel calculation after, so reset it
+    // do not touch vss, it is used by fuel calculation later, so reset it
 #ifdef DEBUG
     *ret=100;
 #else
@@ -3045,7 +3098,7 @@ void needBacklight(boolean On)
 void setup()                    // run once, when the sketch starts
 {
 #ifdef MEGA
-  HOST.begin(38400);
+  HOST.begin(HOST_BAUD_RATE);
   //pinMode(buttonGnd, OUTPUT);
   //digitalWrite(buttonGnd, LOW);
 #endif

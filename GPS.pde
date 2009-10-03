@@ -10,7 +10,7 @@
 void initGps()
 {
   hostPrint(" * Initialising GPS             ");
-  GPS.begin(57600);
+  GPS.begin(GPS_BAUD_RATE);
   hostPrintLn("[OK]");
 }
 
