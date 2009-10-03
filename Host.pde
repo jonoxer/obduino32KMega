@@ -14,7 +14,7 @@ void processHostCommands()
   {
     logActive = 0;
     digitalWrite(VDIP_STATUS_LED, LOW);
-    VDIP.print("CLF ARDUINO.TXT");
+    VDIP.print("CLF OBDUINO.CSV");
     VDIP.print(13, BYTE);
     HOST.println("Stop logging");
   }
@@ -22,7 +22,7 @@ void processHostCommands()
   {
     logActive = 1;
     digitalWrite(VDIP_STATUS_LED, HIGH);
-    VDIP.print("OPW ARDUINO.TXT");
+    VDIP.print("OPW OBDUINO.CSV");
     VDIP.print(13, BYTE);
     HOST.println("Start logging");
   }
@@ -38,7 +38,7 @@ void processHostCommands()
       logActive = 1;
       digitalWrite(VDIP_STATUS_LED, HIGH);
       digitalWrite(LOG_LED, HIGH);
-      VDIP.print("OPW ARDUINO.TXT");
+      VDIP.print("OPW OBDUINO.CSV");
       VDIP.print(13, BYTE);
       HOST.print("> ");
     } else if( readChar == '2') {           // Stop logging and close file
@@ -50,17 +50,17 @@ void processHostCommands()
       logActive = 0;
       digitalWrite(VDIP_STATUS_LED, LOW);
       digitalWrite(LOG_LED, LOW);
-      VDIP.print("CLF ARDUINO.TXT");
+      VDIP.print("CLF OBDUINO.CSV");
       VDIP.print(13, BYTE);
       HOST.print("> ");
     } else if (readChar == '3'){            // Display the file
       HOST.println("Reading file");
-      VDIP.print("RD ARDUINO.TXT");
+      VDIP.print("RD OBDUINO.CSV");
       VDIP.print(13, BYTE);
       HOST.print("> ");
     } else if (readChar == '4'){            // Delete the file
       HOST.println("Deleting file");
-      VDIP.print("DLF ARDUINO.TXT");
+      VDIP.print("DLF OBDUINO.CSV");
       VDIP.print(13, BYTE);
       HOST.print("> ");
     } else if (readChar == '5'){            // Directory listing

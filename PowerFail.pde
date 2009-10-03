@@ -10,7 +10,7 @@
  */
 void powerFail()
 {
-  VDIP.print("CLF ARDUINO.TXT");
+  VDIP.print("CLF OBDUINO.CSV");
   VDIP.print(13, BYTE);
   digitalWrite(LOG_LED, LOW);
   logActive = 0;
